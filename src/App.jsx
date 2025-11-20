@@ -1,73 +1,54 @@
-function App() {
+import { useEffect, useMemo, useState } from "react"
+import AmbientBackground from "./components/AmbientBackground"
+import BrandHeader from "./components/BrandHeader"
+import SearchBar from "./components/SearchBar"
+import OrbitCanvas from "./components/OrbitCanvas"
+import ProfileModal from "./components/ProfileModal"
+
+const SAMPLE_COLORS = ["#EB6A79","#F1B24D","#4FBF8A","#46B3C4","#6D9EF5","#7865F2","#A378F2","#FF8A6E","#7DB28C","#D9A441"]
+
+function generateSamplePeople(n=64){
+  const names = [
+    "Leah Kim","Jonah Patel","Ari Santos","Maya Chen","Noah Park","Iris Novak","Theo Alvarez","Rhea Das","Kai Osei","Zara Bloom",
+    "Omar Haddad","Luca Marino","Nina Volkov","Amara Li","Felix Stone","Isla Quinn","Sora Tanaka","Eden Hale","Milo Drake","Uma Nair"
+  ]
+  return Array.from({length:n}).map((_,i)=>{
+    const name = names[i%names.length] + (i>=names.length?` ${Math.floor(i/names.length)+1}`:"")
+    const color = SAMPLE_COLORS[i%SAMPLE_COLORS.length]
+    const tier = (i%4)+1
+    return { id: `${i}`, name, color, tier, initials: name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase(), bio: "Loves slow mornings and tiny gardens.", tags: tier===1?["Inner"]:tier===2?["Close"]:tier===3?["Familiar"]:["Extended"] }
+  })
+}
+
+export default function App(){
+  const [people, setPeople] = useState(generateSamplePeople(72))
+  const [query, setQuery] = useState("")
+  const [selected, setSelected] = useState(null)
+
+  const filtered = useMemo(()=>{
+    const q = query.trim().toLowerCase()
+    if(!q) return people
+    return people.map(p => ({...p, _match: p.name.toLowerCase().includes(q)}))
+  }, [people, query])
+
+  const highlightIds = useMemo(()=>filtered.filter(p=>p._match).map(p=>p.id),[filtered])
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Subtle pattern overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.05),transparent_50%)]"></div>
+    <div className="relative min-h-screen overflow-hidden">
+      <AmbientBackground />
 
-      <div className="relative min-h-screen flex items-center justify-center p-8">
-        <div className="max-w-2xl w-full">
-          {/* Header with Flames icon */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center mb-6">
-              <img
-                src="/flame-icon.svg"
-                alt="Flames"
-                className="w-24 h-24 drop-shadow-[0_0_25px_rgba(59,130,246,0.5)]"
-              />
-            </div>
+      <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-center px-6 pb-16 pt-6">
+        <BrandHeader />
+        <SearchBar value={query} onChange={setQuery} onClear={()=>setQuery("")} />
 
-            <h1 className="text-5xl font-bold text-white mb-4 tracking-tight">
-              Flames Blue
-            </h1>
-
-            <p className="text-xl text-blue-200 mb-6">
-              Build applications through conversation
-            </p>
-          </div>
-
-          {/* Instructions */}
-          <div className="bg-slate-800/50 backdrop-blur-sm border border-blue-500/20 rounded-2xl p-8 shadow-xl mb-6">
-            <div className="flex items-start gap-4 mb-6">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-lg flex items-center justify-center font-bold">
-                1
-              </div>
-              <div>
-                <h3 className="font-semibold text-white mb-1">Describe your idea</h3>
-                <p className="text-blue-200/80 text-sm">Use the chat panel on the left to tell the AI what you want to build</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4 mb-6">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-lg flex items-center justify-center font-bold">
-                2
-              </div>
-              <div>
-                <h3 className="font-semibold text-white mb-1">Watch it build</h3>
-                <p className="text-blue-200/80 text-sm">Your app will appear in this preview as the AI generates the code</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-lg flex items-center justify-center font-bold">
-                3
-              </div>
-              <div>
-                <h3 className="font-semibold text-white mb-1">Refine and iterate</h3>
-                <p className="text-blue-200/80 text-sm">Continue the conversation to add features and make changes</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="text-center">
-            <p className="text-sm text-blue-300/60">
-              No coding required • Just describe what you want
-            </p>
+        <div className="mt-6 w-full rounded-3xl bg-white/40 p-4 backdrop-blur-md ring-1 ring-black/5 shadow-sm">
+          <div className="relative mx-auto aspect-[1.6/1] w-full max-w-5xl">
+            <OrbitCanvas width={960} height={600} people={filtered} onSelect={setSelected} highlightIds={highlightIds} />
           </div>
         </div>
       </div>
+
+      <ProfileModal open={!!selected} onOpenChange={()=>setSelected(null)} person={selected} />
     </div>
   )
 }
-
-export default App
